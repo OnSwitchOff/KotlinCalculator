@@ -3,7 +3,7 @@ var varsMap = mutableMapOf<String,Int>()
 
 fun main() {
     var f = true
-
+    f = true
     while (f) {
         val input = readLine()!!.trim()
         if (!input.isNullOrEmpty()) {
