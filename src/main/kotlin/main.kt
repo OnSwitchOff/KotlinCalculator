@@ -1,13 +1,13 @@
+import java.math.BigInteger
 
 var varsMap = mutableMapOf<String,Int>()
-
+var f = true
 fun main() {
-    var f = true
-    f = true
     while (f) {
-        val input = readLine()!!.trim()
-        if (!input.isNullOrEmpty()) {
+        val input = readLine()!!.replace(Regex("\\s"),"")
+        if (input.isNotEmpty()) {
             when {
+                isCommand(input) -> executeCommand(input)
                 hasEqual(input) -> addToVars(input)
                 isSoloVariable(input) -> printValue(input)
                 isExpression(input) -> println(calcExpression(input))
@@ -18,59 +18,76 @@ fun main() {
 }
 
 
-
+fun isCommand(input: String): Boolean = input.matches(Regex("[/].+"))
 fun hasEqual(input: String): Boolean = input.matches(Regex(".+=.+"))
 fun isSoloVariable(input: String): Boolean = input.matches(Regex("([a-zA-Z]+)|(-?\\d+)"))
 fun isExpression(input: String): Boolean = input.matches(Regex(".+([-+*/].+)"))
 
 fun calcExpression(input0: String): String {
     var input = input0
-    if (input.matches(Regex("([a-zA-Z]+[0-9]+])|([0-9]+[a-zA-Z]+)"))) return "Invalid expression"
+    if (input.matches(Regex("([a-zA-Z]+[0-9]+])|([0-9]+[a-zA-Z]+)|([*/]{2,})"))) return "Invalid expression"
 
-    while (input.matches(Regex("([-+][-+])"))) {
+
+    val matchResult = Regex("[a-zA-Z]").findAll(input)
+        .map { r -> r.value }
+        .sortedByDescending { r -> r.length }
+    for (match in matchResult) {
+        if (varsMap.containsKey(match)) {
+            input = input.replace(match, varsMap[match].toString())
+        } else {
+            return "Unknown variable"
+        }
+    }
+
+    while (input.matches(Regex("(.+[-+][-+])|(.+[-+][-+].+)|([-+][-+].+)"))) {
         input = input.replace(Regex("[+][+]"),"+")
         input = input.replace(Regex("[-][-]"),"+")
         input = input.replace(Regex("[-][+]"),"-")
+        input = input.replace(Regex("[+][-]"),"-")
     }
 
     when {
-        input.matches(Regex(".*[(].+([-+*/].+)[)].*")) -> {
-            val reg = Regex("[(].+([-+*/].+)[)]")
-            return calcExpression(input.replace(reg,calcExpression(reg.find(input)!!.value)))
+        input.matches(Regex(".*[(][-]?[0-9]+([-+*/][-]?[0-9]+)[)].*")) -> {
+            val reg = Regex("[(][0-9-+*/]+([-+*/][0-9-+*/]+)[)]")
+            val newExp = reg.find(input)!!.value
+            return calcExpression(input.replace(newExp,calcExpression(newExp.substring(1,newExp.lastIndex))))
         }
-        input.matches(Regex(".+[-]?([\\d]+)|([a-zA-Z]+)[*][-]?([\\d]+)|([a-zA-Z]+).+")) -> {
-            val reg = Regex("[-]?([\\d]+)|([a-zA-Z]+)[*][-]?([\\d]+)|([a-zA-Z]+)")
-            return calcExpression(input.replace(reg,calcExpression(reg.find(input)!!.value)))
+        input.matches(Regex("[-]?[\\d]+[*][-]?[\\d]+")) -> {
+            val left = input.substringBefore("*").toInt()
+            val right = input.substringAfter("*").toInt()
+            return (left * right).toString()
         }
-        input.matches(Regex("[-]?([\\d]+)|([a-zA-Z]+)[*][-]?([\\d]+)|([a-zA-Z]+)")) -> {
-            val left = input.substringBefore("*")
-            var l: Int? = null
-            if (left.matches(Regex("[a-zA-Z]+"))) {
-                if (varsMap.containsKey(left.replace("-",""))) {
-                    l = if (left.contains("-")) {
-                        - (varsMap[left.replace("-","")]!!)
-                    } else {
-                        varsMap[left.replace("-","")]
-                    }
-                }
-            } else {
-                l = left.toInt()
-            }
-            val right = input.substringAfter("*")
-            var r: Int? = null
-            if (right.matches(Regex("[a-zA-Z]+"))) {
-                if (varsMap.containsKey(right.replace("-",""))) {
-                    r = if (right.contains("-")) {
-                        - (varsMap[right.replace("-","")]!!)
-                    } else {
-                        varsMap[right.replace("-","")]
-                    }
-                }
-            } else {
-                r = right.toInt()
-            }
-            if (left == null || right == null) return "Unknown variable"
+        input.matches(Regex(".*[\\d]+[*][-]?[\\d]+.*")) -> {
+            val reg = Regex("[\\d]+[*][-]?([\\d]+)")
+            val newExp = reg.find(input)!!.value
+            return calcExpression(input.replace(newExp,calcExpression(newExp)))
         }
+        input.matches(Regex("[-]?[\\d]+[/][-]?[\\d]+")) -> {
+            val left = input.substringBefore("/").toInt()
+            val right = input.substringAfter("/").toInt()
+            return (left / right).toString()
+        }
+        input.matches(Regex(".*[\\d]+[/][-]?[\\d]+.*")) -> {
+            val reg = Regex("[\\d]+[/][-]?([\\d]+)")
+            val newExp = reg.find(input)!!.value
+            return calcExpression(input.replace(newExp,calcExpression(newExp)))
+        }
+        input.matches(Regex("[-]?[\\d]+[+][\\d]+")) -> {
+            val left = input.substringBefore("+").toInt()
+            val right = input.substringAfter("+").toInt()
+            return (left + right).toString()
+        }
+        input.matches(Regex("[-]?[\\d]+[-][\\d]+")) -> {
+            val left = input.substringBefore("-").toInt()
+            val right = input.substringAfter("-").toInt()
+            return (left - right).toString()
+        }
+        input.matches(Regex("[-]?[\\d]+[+-][\\d].+")) -> {
+            val reg = Regex("[-]?[\\d]+[+-][\\d]+")
+            val newExp = reg.find(input)!!.value
+            return calcExpression(input.replace(newExp,calcExpression(newExp)))
+        }
+        else -> return if (Regex("[-]?[\\d]+").matches(input)) input else "Invalid expression"
     }
 }
 
@@ -81,7 +98,7 @@ fun addToVars(input: String) {
     when {
         !left.matches(Regex("[a-zA-Z]+")) -> println("Invalid identifier")
         !right.matches(Regex("(-?\\d+)|([a-zA-Z]+)")) -> println("Invalid assignment")
-        left.matches(Regex("[a-zA-Z]+")) && right.matches(Regex("-?d+")) -> varsMap[left] = right.toInt()
+        left.matches(Regex("[a-zA-Z]+")) && right.matches(Regex("-?\\d+")) -> varsMap[left] = right.toInt()
         left.matches(Regex("[a-zA-Z]+")) && right.matches(Regex("[a-zA-Z]+")) -> {
             if (varsMap.containsKey(right)) {
                 varsMap[left] = varsMap[right]!!
@@ -103,6 +120,21 @@ fun printValue(input: String) {
             }
         }
     }
+}
+
+fun executeCommand(input: String) {
+    when (input) {
+        "/exit" -> {
+            println("Bye!")
+            f = false
+        }
+        "/help" -> println("The program calculates the sum of numbers")
+        else -> println("Unknown command")
+    }
+}
+
+fun getMax(a: BigInteger, b: BigInteger): BigInteger {
+    return ((a-b).abs() + a + b) / 2.toBigInteger()
 }
 
 
