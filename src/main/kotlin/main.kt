@@ -1,6 +1,6 @@
 import java.math.BigInteger
 
-var varsMap = mutableMapOf<String,Int>()
+var varsMap = mutableMapOf<String,BigInteger>()
 var f = true
 fun main() {
     while (f) {
@@ -53,8 +53,8 @@ fun calcExpression(input0: String): String {
             return calcExpression(input.replace(newExp,calcExpression(newExp.substring(1,newExp.lastIndex))))
         }
         input.matches(Regex("[-]?[\\d]+[*][-]?[\\d]+")) -> {
-            val left = input.substringBefore("*").toInt()
-            val right = input.substringAfter("*").toInt()
+            val left = BigInteger(input.substringBefore("*"))
+            val right = BigInteger(input.substringAfter("*"))
             return (left * right).toString()
         }
         input.matches(Regex(".*[\\d]+[*][-]?[\\d]+.*")) -> {
@@ -63,8 +63,8 @@ fun calcExpression(input0: String): String {
             return calcExpression(input.replace(newExp,calcExpression(newExp)))
         }
         input.matches(Regex("[-]?[\\d]+[/][-]?[\\d]+")) -> {
-            val left = input.substringBefore("/").toInt()
-            val right = input.substringAfter("/").toInt()
+            val left = BigInteger(input.substringBefore("/"))
+            val right = BigInteger(input.substringAfter("/"))
             return (left / right).toString()
         }
         input.matches(Regex(".*[\\d]+[/][-]?[\\d]+.*")) -> {
@@ -73,13 +73,13 @@ fun calcExpression(input0: String): String {
             return calcExpression(input.replace(newExp,calcExpression(newExp)))
         }
         input.matches(Regex("[-]?[\\d]+[+][\\d]+")) -> {
-            val left = input.substringBefore("+").toInt()
-            val right = input.substringAfter("+").toInt()
+            val left = BigInteger(input.substringBefore("+"))
+            val right = BigInteger(input.substringAfter("+"))
             return (left + right).toString()
         }
         input.matches(Regex("[-]?[\\d]+[-][\\d]+")) -> {
-            val left = input.substringBefore("-").toInt()
-            val right = input.substringAfter("-").toInt()
+            val left = BigInteger(input.substringBefore("-"))
+            val right = BigInteger(input.substringAfter("-"))
             return (left - right).toString()
         }
         input.matches(Regex("[-]?[\\d]+[+-][\\d].+")) -> {
@@ -98,7 +98,7 @@ fun addToVars(input: String) {
     when {
         !left.matches(Regex("[a-zA-Z]+")) -> println("Invalid identifier")
         !right.matches(Regex("(-?\\d+)|([a-zA-Z]+)")) -> println("Invalid assignment")
-        left.matches(Regex("[a-zA-Z]+")) && right.matches(Regex("-?\\d+")) -> varsMap[left] = right.toInt()
+        left.matches(Regex("[a-zA-Z]+")) && right.matches(Regex("-?\\d+")) -> varsMap[left] = BigInteger(right)
         left.matches(Regex("[a-zA-Z]+")) && right.matches(Regex("[a-zA-Z]+")) -> {
             if (varsMap.containsKey(right)) {
                 varsMap[left] = varsMap[right]!!
@@ -133,8 +133,8 @@ fun executeCommand(input: String) {
     }
 }
 
-fun getMax(a: BigInteger, b: BigInteger): BigInteger {
-    return ((a-b).abs() + a + b) / 2.toBigInteger()
-}
+
+
+
 
 
